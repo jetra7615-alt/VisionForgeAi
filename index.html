@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision Forge AI</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0a0a0f;
+  color: white;
+}
+
+/* LOGIN */
+#login {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  background: #111;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  width: 300px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+button {
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #7a5cff;
+  color: white;
+  cursor: pointer;
+}
+
+/* APP */
+#app {
+  display: none;
+  height: 100vh;
+  display: flex;
+}
+
+.sidebar {
+  width: 200px;
+  background: #111;
+  padding: 10px;
+}
+
+.sidebar button {
+  width: 100%;
+  margin: 5px 0;
+  background: #222;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  padding: 10px;
+  background: #111;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* CHAT */
+.chat {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.message {
+  margin: 10px 0;
+}
+
+.user {
+  text-align: right;
+  color: #aaa;
+}
+
+.ai img {
+  max-width: 250px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+/* INPUT */
+.inputBox {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: #111;
+}
+
+.inputBox input {
+  flex: 1;
+}
+
+/* OTHER PAGES */
+#history, #premium {
+  display: none;
+  padding: 20px;
+}
+
+#history img {
+  width: 80px;
+  margin: 5px;
+  border-radius: 8px;
+}
+
+.loading {
+  color: #7a5cff;
+  font-style: italic;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h2>🚀 Vision Forge AI</h2>
+    <input placeholder="Email">
+    <input placeholder="Password" type="password">
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <div class="sidebar">
+    <button onclick="show('chat')">💬 Generate</button>
+    <button onclick="show('history')">📜 History</button>
+    <button onclick="show('premium')">💎 Premium</button>
+  </div>
+
+  <div class="main">
+
+    <div class="topbar">
+      <span>Credits: <b id="credits">100</b></span>
+      <span>Images: <b id="images">0</b></span>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chat" class="chat"></div>
+
+    <!-- HISTORY -->
+    <div id="history"></div>
+
+    <!-- PREMIUM -->
+    <div id="premium">
+      <h2>💎 Premium</h2>
+      <p>Unlock:</p>
+      <ul>
+        <li>Sora 2</li>
+        <li>Nano Banana Pro</li>
+        <li>Faster generation</li>
+      </ul>
+      <button onclick="upgrade()">Upgrade</button>
+    </div>
+
+    <!-- INPUT -->
+    <div class="inputBox">
+      <input id="prompt" placeholder="Describe your image..." />
+
+      <select id="model">
+        <option value="5">Basic (5 credits)</option>
+        <option value="10">Pro (10 credits)</option>
+        <option value="20">Ultra (20 credits)</option>
+        <option value="premium">🔥 Sora 2 (Premium)</option>
+        <option value="premium">🍌 Nano Banana Pro (Premium)</option>
+      </select>
+
+      <button onclick="generate()">Send</button>
+      <button onclick="video()">🎬</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let credits = 100;
+let images = 0;
+let isPremium = false;
+let history = [];
+
+function login() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "flex";
+}
+
+function show(tab) {
+  document.getElementById("chat").style.display = "none";
+  document.getElementById("history").style.display = "none";
+  document.getElementById("premium").style.display = "none";
+
+  document.getElementById(tab).style.display = "block";
+}
+
+function generate() {
+  let prompt = document.getElementById("prompt").value;
+  let model = document.getElementById("model").value;
+
+  if (!prompt) return alert("Enter a prompt");
+
+  if (model === "premium" && !isPremium) {
+    alert("Premium only model!");
+    return;
+  }
+
+  let cost = parseInt(model) || 0;
+
+  if (credits < cost) {
+    alert("Not enough credits!");
+    return;
+  }
+
+  credits -= cost;
+  images++;
+
+  updateUI();
+
+  let chat = document.getElementById("chat");
+
+  chat.innerHTML += `
+    <div class="message user">${prompt}</div>
+    <div class="message ai loading">Generating...</div>
+  `;
+
+  let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+
+  setTimeout(() => {
+    chat.innerHTML = chat.innerHTML.replace(
+      "Generating...",
+      `<img src="${url}">
+       <br>
+       <a href="${url}" download>
+         <button>Download</button>
+       </a>`
+    );
+  }, 1000);
+
+  history.push(url);
+  updateHistory();
+}
+
+function video() {
+  if (credits < 25) {
+    alert("Need 25 credits!");
+    return;
+  }
+
+  credits -= 25;
+  updateUI();
+
+  alert("🎬 Image to Video coming soon!");
+}
+
+function updateUI() {
+  document.getElementById("credits").innerText = credits;
+  document.getElementById("images").innerText = images;
+}
+
+function updateHistory() {
+  document.getElementById("history").innerHTML =
+    history.map(img => `<img src="${img}">`).join("");
+}
+
+function upgrade() {
+  isPremium = true;
+  alert("Premium unlocked 🚀");
+}
+</script>
+
+</body>
+</html>
