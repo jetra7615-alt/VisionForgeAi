@@ -1,289 +1,976 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vision Forge AI</title>
-
-<style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  background: #0b0b12;
-  color: white;
-}
-
-/* LAYOUT */
-.app {
-  display: flex;
-  height: 100vh;
-}
-
-/* SIDEBAR */
-.sidebar {
-  width: 240px;
-  background: #111;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sidebar h2 {
-  margin-bottom: 10px;
-}
-
-.sidebar button {
-  background: #1a1a22;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  text-align: left;
-}
-
-.sidebar button:hover {
-  background: #2a2a35;
-}
-
-/* MAIN */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* TOP BAR */
-.topbar {
-  padding: 12px 20px;
-  border-bottom: 1px solid #222;
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-}
-
-/* CHAT AREA */
-.chat {
-  flex: 1;
-  overflow-y: auto;
-  padding: 30px;
-}
-
-.message {
-  margin-bottom: 20px;
-  max-width: 600px;
-}
-
-.user {
-  margin-left: auto;
-  text-align: right;
-  color: #aaa;
-}
-
-.ai {
-  background: #151520;
-  padding: 15px;
-  border-radius: 12px;
-}
-
-.ai img {
-  margin-top: 10px;
-  width: 100%;
-  border-radius: 10px;
-}
-
-/* INPUT BAR */
-.inputBar {
-  padding: 15px;
-  border-top: 1px solid #222;
-  display: flex;
-  gap: 10px;
-}
-
-.inputBar input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  background: #1a1a22;
-  color: white;
-}
-
-.inputBar select {
-  background: #1a1a22;
-  border: none;
-  color: white;
-  border-radius: 8px;
-}
-
-.inputBar button {
-  background: #7a5cff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* PAGES */
-.page {
-  display: none;
-}
-
-.active {
-  display: block;
-}
-
-/* LOGIN */
-#login {
-  display: flex;
-  height: 100vh;
-  justify-content: center;
-  align-items: center;
-}
-
-.login-box {
-  background: #111;
-  padding: 30px;
-  border-radius: 10px;
-}
-
-.login-box input {
-  width: 100%;
-  margin-top: 10px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Forge AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --neon-purple: #c026d3;
+            --neon-cyan: #22d3ee;
+        }
+        
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        
+        .tail-container * {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .logo-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        .dark {
+            background-color: #0a0a0f;
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 15px var(--neon-purple);
+        }
+        
+        .chat-bubble-ai {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(192, 38, 211, 0.3);
+            box-shadow: 0 0 25px rgba(192, 38, 211, 0.15);
+        }
+        
+        .loading-shimmer {
+            animation: shimmer 1.5s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        .sidebar-link {
+            position: relative;
+        }
+        
+        .sidebar-link.active:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: linear-gradient(to bottom, #c026d3, #22d3ee);
+            border-radius: 9999px;
+        }
+        
+        .message-container {
+            scrollbar-width: thin;
+            scrollbar-color: #c026d3 #1a1a2e;
+        }
+    </style>
 </head>
-
-<body>
-
-<!-- LOGIN -->
-<div id="login">
-  <div class="login-box">
-    <h2>Vision Forge AI</h2>
-    <input placeholder="Email">
-    <input placeholder="Password" type="password">
-    <button onclick="start()">Login</button>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app" style="display:none;" class="app">
-
-  <div class="sidebar">
-    <h2>Vision Forge</h2>
-    <button onclick="show('chat')">💬 Generate</button>
-    <button onclick="show('history')">📜 History</button>
-    <button onclick="show('premium')">💎 Premium</button>
-  </div>
-
-  <div class="main">
-
-    <div class="topbar">
-      <div>Credits: <b id="credits">100</b></div>
-      <div>Images: <b id="images">0</b></div>
+<body class="dark tail-container bg-[#0a0a0f] text-white min-h-screen flex flex-col">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="flex items-center justify-center min-h-screen p-6">
+        <div class="w-full max-w-md">
+            <!-- Logo -->
+            <div class="flex items-center justify-center mb-8 gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-[#c026d3] to-[#22d3ee] rounded-2xl flex items-center justify-center text-3xl shadow-[0_0_25px_-5px] shadow-[#c026d3]">
+                    ⚡
+                </div>
+                <h1 class="logo-font text-5xl tracking-tighter neon-text">Vision Forge AI</h1>
+            </div>
+            
+            <div class="bg-[#16161f] border border-white/10 rounded-3xl p-8 shadow-2xl">
+                <h2 class="text-2xl font-semibold text-center mb-2">Welcome back, Creator</h2>
+                <p class="text-zinc-400 text-center mb-8">Sign in to start forging visions</p>
+                
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-400 mb-1.5">Email</label>
+                        <input 
+                            id="email"
+                            type="email" 
+                            value="demo@visionforge.ai"
+                            class="w-full bg-[#0f0f17] border border-white/10 focus:border-[#c026d3] rounded-2xl px-5 py-4 text-white placeholder-zinc-500 outline-none"
+                            placeholder="you@visionforge.ai"
+                            required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-400 mb-1.5">Password</label>
+                        <input 
+                            id="password"
+                            type="password" 
+                            value="demo123"
+                            class="w-full bg-[#0f0f17] border border-white/10 focus:border-[#c026d3] rounded-2xl px-5 py-4 text-white placeholder-zinc-500 outline-none"
+                            placeholder="••••••••"
+                            required>
+                    </div>
+                    
+                    <button 
+                        type="submit"
+                        class="w-full bg-gradient-to-r from-[#c026d3] to-[#22d3ee] hover:brightness-110 text-white font-semibold py-4 rounded-2xl text-lg flex items-center justify-center gap-2">
+                        <span>Enter the Forge</span>
+                        <span class="text-2xl">→</span>
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center text-xs text-zinc-500">
+                    Demo credentials pre-filled • No real auth required
+                </div>
+                
+                <div class="flex items-center justify-center gap-8 mt-8 text-xs text-zinc-400">
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                        12,458 online
+                    </div>
+                    <div>Secure • Encrypted • Futuristic</div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-6 text-zinc-500 text-sm">
+                Built as a complete single-file demo • Copy-paste &amp; run
+            </div>
+        </div>
     </div>
-
-    <!-- CHAT -->
-    <div id="chat" class="chat page active"></div>
-
-    <!-- HISTORY -->
-    <div id="history" class="chat page"></div>
-
-    <!-- PREMIUM -->
-    <div id="premium" class="chat page">
-      <h2>Upgrade</h2>
-      <p>Unlock Sora 2 & Nano Banana Pro</p>
-      <button onclick="upgrade()">Upgrade</button>
+    
+    <!-- MAIN APP -->
+    <div id="app-screen" class="hidden flex h-screen flex-col">
+        
+        <!-- HEADER -->
+        <header class="h-14 border-b border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl px-6 flex items-center justify-between z-50">
+            
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gradient-to-br from-[#c026d3] to-[#22d3ee] rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_15px_-3px] shadow-[#c026d3]">
+                    ⚡
+                </div>
+                <h1 class="logo-font text-2xl tracking-[-1px]">Vision Forge AI</h1>
+            </div>
+            
+            <!-- Credits -->
+            <div onclick="showCreditsModal()" class="flex items-center gap-2 bg-[#16161f] hover:bg-[#1f1f2b] border border-white/10 rounded-3xl px-5 py-1 cursor-pointer">
+                <div class="text-[#22d3ee] text-xl">💎</div>
+                <div>
+                    <span id="credits-display" class="font-semibold text-lg">100</span>
+                    <span class="text-zinc-400 text-sm ml-1">credits</span>
+                </div>
+                <div class="text-[10px] px-2 py-px bg-[#22d3ee]/10 text-[#22d3ee] rounded-2xl font-medium">PRO</div>
+            </div>
+            
+            <!-- User -->
+            <div class="flex items-center gap-3">
+                <div id="user-email" class="text-sm font-medium text-zinc-300"></div>
+                <div class="w-8 h-8 bg-gradient-to-br from-[#c026d3] to-[#22d3ee] rounded-2xl flex items-center justify-center text-white font-bold cursor-pointer" onclick="logout()">
+                    VF
+                </div>
+                <button onclick="logout()" 
+                        class="text-zinc-400 hover:text-white text-sm flex items-center gap-1">
+                    <span>Logout</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4V7m-4 4V7" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+        
+        <div class="flex flex-1 overflow-hidden">
+            
+            <!-- SIDEBAR -->
+            <div class="w-64 bg-[#0f0f17] border-r border-white/10 flex flex-col">
+                
+                <nav class="flex-1 px-3 py-6 space-y-1">
+                    <!-- Generate -->
+                    <a onclick="navigateTo('generate')" 
+                       id="nav-generate"
+                       class="sidebar-link flex items-center gap-3 px-4 py-4 rounded-2xl text-zinc-200 hover:bg-white/5 active">
+                        <span class="text-2xl">✦</span>
+                        <span class="font-medium">Generate</span>
+                    </a>
+                    
+                    <!-- History -->
+                    <a onclick="navigateTo('history')" 
+                       id="nav-history"
+                       class="sidebar-link flex items-center gap-3 px-4 py-4 rounded-2xl text-zinc-200 hover:bg-white/5">
+                        <span class="text-2xl">📜</span>
+                        <span class="font-medium">History</span>
+                    </a>
+                    
+                    <!-- Premium -->
+                    <a onclick="navigateTo('premium')" 
+                       id="nav-premium"
+                       class="sidebar-link flex items-center gap-3 px-4 py-4 rounded-2xl text-zinc-200 hover:bg-white/5">
+                        <span class="text-2xl">💎</span>
+                        <span class="font-medium">Premium</span>
+                        <span id="premium-badge" class="ml-auto text-[10px] px-3 py-px bg-gradient-to-r from-[#c026d3] to-[#22d3ee] text-white rounded-3xl font-bold hidden">PREMIUM</span>
+                    </a>
+                </nav>
+                
+                <div class="p-4 border-t border-white/10 text-xs text-zinc-500">
+                    <div class="flex justify-between items-center">
+                        <div>Speed • Simplicity • Power</div>
+                        <div class="flex items-center gap-1 text-emerald-400">
+                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                            LIVE
+                        </div>
+                    </div>
+                    <div class="mt-3 text-[10px]">Built as complete demo • 100% client-side</div>
+                </div>
+            </div>
+            
+            <!-- MAIN CONTENT AREA -->
+            
+            <!-- GENERATE SCREEN -->
+            <div id="screen-generate" class="flex-1 flex flex-col">
+                
+                <!-- Chat Header -->
+                <div class="px-8 py-5 border-b border-white/10 flex items-center justify-between bg-white/5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[#c026d3] text-2xl">✦</span>
+                        <h2 class="text-xl font-semibold">Forge your vision</h2>
+                    </div>
+                    
+                    <!-- Model selector inside header for fast access -->
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="text-zinc-400">Model:</span>
+                        <select id="model-select" 
+                                onchange="updateModelInfo()"
+                                class="bg-[#16161f] border border-white/10 rounded-3xl px-4 py-2 text-sm focus:outline-none focus:border-[#c026d3]">
+                            <option value="basic">Basic — 5 credits</option>
+                            <option value="pro">Pro — 10 credits</option>
+                            <option value="ultra">Ultra — 20 credits</option>
+                            <option value="sora2" class="premium-only">Sora 2 — Premium</option>
+                            <option value="nanobanana" class="premium-only">Nano Banana Pro — Premium</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Image to Video button -->
+                    <button onclick="triggerImageToVideo()"
+                            class="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-white px-6 py-2 rounded-3xl text-sm font-semibold">
+                        <span>🎬</span>
+                        <span>Image to Video</span>
+                        <span class="text-xs bg-white/20 px-3 py-px rounded-2xl">25 credits</span>
+                    </button>
+                </div>
+                
+                <!-- Chat Messages -->
+                <div id="chat-container" class="flex-1 overflow-y-auto p-8 message-container space-y-8">
+                    <!-- JS injected messages go here -->
+                    <div class="flex justify-center items-center h-full text-zinc-400 text-center flex-col gap-3" id="welcome-state">
+                        <div class="text-7xl mb-4">⚡</div>
+                        <h3 class="text-3xl font-semibold logo-font tracking-tight">What will you forge today?</h3>
+                        <p class="max-w-xs text-zinc-500">Describe anything. Our AI turns words into stunning visuals instantly.</p>
+                        <div class="flex gap-2 mt-6">
+                            <div onclick="quickPrompt('A cyberpunk city at midnight with flying cars and neon lights')" 
+                                 class="text-xs bg-white/5 hover:bg-white/10 px-4 py-2 rounded-3xl cursor-pointer">Cyberpunk city</div>
+                            <div onclick="quickPrompt('A serene mountain landscape with glowing crystal formations')" 
+                                 class="text-xs bg-white/5 hover:bg-white/10 px-4 py-2 rounded-3xl cursor-pointer">Crystal mountains</div>
+                            <div onclick="quickPrompt('An abstract futuristic AI brain made of liquid metal')" 
+                                 class="text-xs bg-white/5 hover:bg-white/10 px-4 py-2 rounded-3xl cursor-pointer">AI brain</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Prompt Input -->
+                <div class="p-6 border-t border-white/10 bg-[#0a0a0f]">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="relative">
+                            <textarea id="prompt-input" 
+                                      rows="1"
+                                      class="w-full bg-[#16161f] border border-white/10 focus:border-[#c026d3] rounded-3xl px-7 py-5 pr-28 resize-none text-lg placeholder-zinc-400 outline-none"
+                                      placeholder="Describe your vision... (e.g. a majestic dragon in a neon Tokyo street)"></textarea>
+                            
+                            <button onclick="generateImage()"
+                                    class="absolute right-3 bottom-3 bg-gradient-to-r from-[#c026d3] to-[#22d3ee] text-white font-semibold px-8 py-3 rounded-3xl flex items-center gap-2 hover:scale-105">
+                                <span>Generate</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="text-[10px] text-zinc-400 flex justify-between mt-3 px-2">
+                            <div>Press <span class="font-mono bg-white/10 px-1 rounded">⏎</span> to send</div>
+                            <div id="cost-preview" class="font-medium">5 credits • Basic</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HISTORY SCREEN -->
+            <div id="screen-history" class="flex-1 p-8 hidden overflow-y-auto">
+                <div class="max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-semibold mb-8 flex items-center gap-3">
+                        <span>📜</span> Your Creations
+                    </h2>
+                    
+                    <div id="history-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div id="empty-history" class="hidden flex flex-col items-center justify-center py-20 text-center">
+                        <div class="text-8xl mb-6 opacity-20">📜</div>
+                        <p class="text-2xl text-zinc-400">No visions forged yet</p>
+                        <p class="text-zinc-500 mt-2">Your generated images will appear here</p>
+                        <button onclick="navigateTo('generate')" 
+                                class="mt-8 px-8 py-4 bg-[#c026d3] text-white rounded-3xl">Start forging</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PREMIUM SCREEN -->
+            <div id="screen-premium" class="flex-1 p-8 hidden">
+                <div class="max-w-2xl mx-auto bg-[#16161f] rounded-3xl p-10 border border-white/10">
+                    <div class="flex justify-between">
+                        <div>
+                            <span class="px-4 py-1 text-xs bg-gradient-to-r from-[#c026d3] to-[#22d3ee] rounded-3xl">PREMIUM</span>
+                            <h2 class="text-4xl font-semibold mt-4 logo-font tracking-[-1px]">Unlock the full forge</h2>
+                        </div>
+                        <div id="premium-status" class="text-right">
+                            <!-- JS injected -->
+                        </div>
+                    </div>
+                    
+                    <p class="text-zinc-400 mt-3">Get access to exclusive models, zero wait times, and unlimited creativity.</p>
+                    
+                    <div class="grid grid-cols-2 gap-8 mt-10">
+                        <div class="space-y-6">
+                            <div class="flex gap-4">
+                                <div class="text-4xl">🚀</div>
+                                <div>
+                                    <div class="font-semibold">Sora 2</div>
+                                    <div class="text-sm text-zinc-400">State-of-the-art video generation from text</div>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="text-4xl">🍌</div>
+                                <div>
+                                    <div class="font-semibold">Nano Banana Pro</div>
+                                    <div class="text-sm text-zinc-400">Ultra-fast hyper-realistic renders</div>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="text-4xl">⚡</div>
+                                <div>
+                                    <div class="font-semibold">Instant generation</div>
+                                    <div class="text-sm text-zinc-400">No queues. Ever.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-[#0a0a0f] rounded-3xl p-8 flex flex-col justify-between">
+                            <div>
+                                <div class="uppercase text-xs tracking-[1px] mb-2 text-[#22d3ee]">What you get</div>
+                                <ul class="space-y-4 text-sm">
+                                    <li class="flex items-center gap-2">✅ Access to Sora 2 &amp; Nano Banana Pro</li>
+                                    <li class="flex items-center gap-2">✅ 2× faster generation</li>
+                                    <li class="flex items-center gap-2">✅ 500 bonus credits monthly</li>
+                                    <li class="flex items-center gap-2">✅ Priority support</li>
+                                    <li class="flex items-center gap-2">✅ Early access to new models</li>
+                                </ul>
+                            </div>
+                            
+                            <button onclick="upgradeToPremium()" 
+                                    id="upgrade-btn"
+                                    class="mt-8 w-full bg-gradient-to-r from-[#c026d3] to-[#22d3ee] py-5 rounded-3xl text-xl font-semibold flex items-center justify-center gap-3">
+                                <span>Upgrade Now — Free for demo</span>
+                                <span class="text-3xl">💎</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p class="text-center text-xs text-zinc-500 mt-12">This is a complete functional demo. Premium is instantly activated in browser.</p>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- INPUT -->
-    <div class="inputBar">
-      <input id="prompt" placeholder="Type something..." />
-
-      <select id="model">
-        <option value="5">Basic</option>
-        <option value="10">Pro</option>
-        <option value="20">Ultra</option>
-        <option value="premium">Sora 2 🔒</option>
-      </select>
-
-      <button onclick="generate()">Send</button>
+    
+    <!-- GENERATING MODAL -->
+    <div id="generating-modal" onclick="if(event.target.id==='generating-modal')hideModal()" 
+         class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[9999]">
+        <div onclick="event.stopImmediatePropagation()" 
+             class="bg-[#16161f] rounded-3xl p-10 max-w-sm w-full text-center">
+            <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[#c026d3] to-[#22d3ee] flex items-center justify-center text-4xl animate-spin">⚡</div>
+            <h3 class="text-2xl font-semibold mb-2">Forging your vision...</h3>
+            <p id="modal-status" class="text-zinc-400">This usually takes 2–3 seconds</p>
+            
+            <div class="mt-8 h-2 bg-white/10 rounded-3xl overflow-hidden">
+                <div id="progress-bar" class="h-2 w-1/3 bg-gradient-to-r from-[#c026d3] to-[#22d3ee] loading-shimmer"></div>
+            </div>
+            
+            <div class="text-xs text-zinc-400 mt-6">High-quality • No compromises</div>
+        </div>
     </div>
-
-  </div>
-</div>
-
-<script>
-let credits = 100;
-let images = 0;
-let premium = false;
-let history = [];
-
-function start() {
-  document.getElementById("login").style.display = "none";
-  document.getElementById("app").style.display = "flex";
-}
-
-function show(page) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById(page).classList.add("active");
-}
-
-function generate() {
-  let prompt = document.getElementById("prompt").value;
-  let model = document.getElementById("model").value;
-
-  if (!prompt) return;
-
-  if (model === "premium" && !premium) {
-    alert("Premium only");
-    return;
-  }
-
-  let cost = parseInt(model) || 0;
-  if (credits < cost) return alert("No credits");
-
-  credits -= cost;
-  images++;
-
-  document.getElementById("credits").innerText = credits;
-  document.getElementById("images").innerText = images;
-
-  let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-
-  let chat = document.getElementById("chat");
-
-  chat.innerHTML += `
-    <div class="message user">${prompt}</div>
-    <div class="message ai">
-      Generating...
+    
+    <!-- Credits Modal -->
+    <div onclick="if(event.target.id==='credits-modal')hideModal()" 
+         id="credits-modal" class="hidden fixed inset-0 bg-black/70 z-[11000] flex items-center justify-center">
+        <div class="bg-[#16161f] rounded-3xl w-full max-w-md p-8">
+            <h3 class="text-2xl font-semibold mb-6">Your Credits</h3>
+            <div class="flex items-end gap-4 mb-8">
+                <span id="modal-credits" class="text-7xl font-semibold text-[#22d3ee]">100</span>
+                <span class="text-zinc-400">credits remaining</span>
+            </div>
+            <p class="text-sm text-zinc-400">Every new user starts with 100 credits.<br>Premium users get 500 more every month.</p>
+            
+            <div class="mt-8 flex justify-end">
+                <button onclick="hideModal()" class="px-8 py-3 rounded-3xl border border-white/30 text-sm">Got it</button>
+            </div>
+        </div>
     </div>
-  `;
-
-  setTimeout(() => {
-    chat.innerHTML += `
-      <div class="message ai">
-        <img src="${url}">
-        <br>
-        <a href="${url}" download><button>Download</button></a>
-      </div>
-    `;
-  }, 700);
-
-  history.push(url);
-  document.getElementById("history").innerHTML =
-    history.map(i => `<img src="${i}" width="100">`).join("");
-}
-
-function upgrade() {
-  premium = true;
-  alert("Premium enabled");
-}
-</script>
-
+    
+    <!-- Image to Video Placeholder Modal -->
+    <div onclick="if(event.target.id==='video-modal')hideModal()" 
+         id="video-modal" class="hidden fixed inset-0 bg-black/70 z-[11000] flex items-center justify-center">
+        <div class="bg-[#16161f] rounded-3xl max-w-xl w-full overflow-hidden">
+            <div class="px-8 pt-8 pb-4">
+                <h3 class="flex items-center gap-3 text-2xl"><span>🎬</span> Image to Video</h3>
+                <p id="video-modal-text" class="text-zinc-400">Turning your last image into motion...</p>
+            </div>
+            
+            <div id="video-placeholder" class="bg-black mx-8 rounded-3xl aspect-video flex items-center justify-center relative overflow-hidden">
+                <div class="text-center">
+                    <div class="text-8xl mb-4 animate-pulse">🎥</div>
+                    <div id="video-status" class="text-lg font-medium">Generating 4-second cinematic clip</div>
+                    <div class="text-xs text-zinc-500 mt-2">Sora 2 engine • Premium model</div>
+                </div>
+                <!-- Fake video overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex items-end justify-center pb-6 text-xs text-white/60 font-mono hidden" id="video-ready">
+                    ▶️ 0:00 / 0:04 • 1080p • 60fps
+                </div>
+            </div>
+            
+            <div class="p-8 flex justify-between items-center">
+                <button onclick="hideModal()" class="text-zinc-400">Close</button>
+                <button onclick="fakeDownloadVideo()" 
+                        class="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-3xl">
+                    <span>Download MP4</span>
+                    <span class="text-xl">↓</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tailwind CDN initialization
+        function initializeTailwind() {
+            return {
+                config(userConfig = {}) {
+                    return {
+                        configUser: userConfig,
+                        theme: {
+                            extend: {},
+                        },
+                    }
+                },
+                theme: {
+                    extend: {},
+                },
+            }
+        }
+        
+        // Global state
+        let currentUser = {
+            email: '',
+            isPremium: false
+        }
+        
+        let credits = 100
+        let history = []
+        let chatMessages = []
+        let lastGeneratedImageUrl = null
+        
+        // Fake image pool (high-quality AI-style placeholders via Picsum)
+        const imagePool = [
+            "https://picsum.photos/id/1015/1024/1024",
+            "https://picsum.photos/id/133/1024/1024",
+            "https://picsum.photos/id/201/1024/1024",
+            "https://picsum.photos/id/1005/1024/1024",
+            "https://picsum.photos/id/160/1024/1024",
+            "https://picsum.photos/id/251/1024/1024",
+            "https://picsum.photos/id/1009/1024/1024",
+            "https://picsum.photos/id/1016/1024/1024",
+            "https://picsum.photos/id/29/1024/1024",
+            "https://picsum.photos/id/870/1024/1024"
+        ]
+        
+        let imageIndex = 0
+        
+        function getNextFakeImage() {
+            const url = imagePool[imageIndex % imagePool.length]
+            imageIndex++
+            return url
+        }
+        
+        // Load from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('visionForgeState')
+            if (saved) {
+                const data = JSON.parse(saved)
+                credits = data.credits || 100
+                history = data.history || []
+                currentUser.isPremium = data.isPremium || false
+                chatMessages = data.chatMessages || []
+            }
+        }
+        
+        function saveState() {
+            const state = {
+                credits: credits,
+                history: history,
+                isPremium: currentUser.isPremium,
+                chatMessages: chatMessages
+            }
+            localStorage.setItem('visionForgeState', JSON.stringify(state))
+        }
+        
+        // Render credits everywhere
+        function updateCreditsUI() {
+            const display = document.getElementById('credits-display')
+            if (display) display.textContent = credits
+            const modalCredits = document.getElementById('modal-credits')
+            if (modalCredits) modalCredits.textContent = credits
+        }
+        
+        // Login
+        function handleLogin(e) {
+            e.preventDefault()
+            
+            const email = document.getElementById('email').value || 'demo@visionforge.ai'
+            
+            currentUser.email = email
+            document.getElementById('user-email').textContent = email
+            
+            loadState()
+            updateCreditsUI()
+            updatePremiumBadge()
+            
+            // Hide login, show app
+            document.getElementById('login-screen').classList.add('hidden')
+            document.getElementById('app-screen').classList.remove('hidden')
+            
+            // Restore previous chat if any
+            if (chatMessages.length) {
+                renderChat()
+            } else {
+                document.getElementById('welcome-state').classList.remove('hidden')
+            }
+            
+            navigateTo('generate')
+        }
+        
+        function logout() {
+            if (confirm('End this session and return to login?')) {
+                localStorage.removeItem('visionForgeState')
+                location.reload()
+            }
+        }
+        
+        // Navigation
+        function navigateTo(screen) {
+            // Hide all screens
+            document.querySelectorAll('#screen-generate, #screen-history, #screen-premium').forEach(s => s.classList.add('hidden'))
+            
+            // Show selected
+            if (screen === 'generate') {
+                document.getElementById('screen-generate').classList.remove('hidden')
+                document.getElementById('nav-generate').classList.add('active')
+                document.getElementById('nav-history').classList.remove('active')
+                document.getElementById('nav-premium').classList.remove('active')
+            } else if (screen === 'history') {
+                document.getElementById('screen-history').classList.remove('hidden')
+                renderHistory()
+                document.getElementById('nav-generate').classList.remove('active')
+                document.getElementById('nav-history').classList.add('active')
+                document.getElementById('nav-premium').classList.remove('active')
+            } else if (screen === 'premium') {
+                document.getElementById('screen-premium').classList.remove('hidden')
+                renderPremiumScreen()
+                document.getElementById('nav-generate').classList.remove('active')
+                document.getElementById('nav-history').classList.remove('active')
+                document.getElementById('nav-premium').classList.add('active')
+            }
+        }
+        
+        // Update model cost preview
+        function updateModelInfo() {
+            const select = document.getElementById('model-select')
+            const preview = document.getElementById('cost-preview')
+            
+            let cost = 5
+            let name = 'Basic'
+            
+            switch (select.value) {
+                case 'basic':
+                    cost = 5
+                    name = 'Basic'
+                    break
+                case 'pro':
+                    cost = 10
+                    name = 'Pro'
+                    break
+                case 'ultra':
+                    cost = 20
+                    name = 'Ultra'
+                    break
+                case 'sora2':
+                    cost = 25
+                    name = 'Sora 2'
+                    break
+                case 'nanobanana':
+                    cost = 30
+                    name = 'Nano Banana Pro'
+                    break
+            }
+            
+            preview.innerHTML = `${cost} credits • <span class="text-[#22d3ee]">${name}</span>`
+            
+            // Block premium models if not premium
+            if ((select.value === 'sora2' || select.value === 'nanobanana') && !currentUser.isPremium) {
+                preview.innerHTML += ` <span class="text-amber-400 text-xs">LOCKED</span>`
+            }
+        }
+        
+        // Generate image
+        function generateImage() {
+            const promptInput = document.getElementById('prompt-input')
+            const prompt = promptInput.value.trim()
+            
+            if (!prompt) {
+                promptInput.classList.add('animate-pulse')
+                setTimeout(() => promptInput.classList.remove('animate-pulse'), 800)
+                return
+            }
+            
+            const modelSelect = document.getElementById('model-select').value
+            
+            // Check premium lock
+            if ((modelSelect === 'sora2' || modelSelect === 'nanobanana') && !currentUser.isPremium) {
+                alert('🔒 This model requires Premium access.\n\nGo to Premium tab to unlock instantly (demo).')
+                return
+            }
+            
+            let cost = 5
+            switch (modelSelect) {
+                case 'pro': cost = 10; break
+                case 'ultra': cost = 20; break
+                case 'sora2': cost = 25; break
+                case 'nanobanana': cost = 30; break
+            }
+            
+            if (credits < cost) {
+                alert(`Not enough credits!\nYou have ${credits} • Need ${cost}`)
+                showCreditsModal()
+                return
+            }
+            
+            // Hide welcome
+            document.getElementById('welcome-state').classList.add('hidden')
+            
+            // Add user message
+            chatMessages.push({
+                role: 'user',
+                content: prompt
+            })
+            
+            renderChat()
+            
+            // Clear input
+            promptInput.value = ''
+            
+            // Show generating modal
+            showGeneratingModal(modelSelect, cost)
+            
+            // Simulate network delay (realistic 1.8s)
+            setTimeout(() => {
+                // Deduct credits
+                credits -= cost
+                updateCreditsUI()
+                saveState()
+                
+                // Get fake image
+                const imageUrl = getNextFakeImage()
+                lastGeneratedImageUrl = imageUrl
+                
+                // AI response
+                const modelNames = {
+                    basic: 'Basic',
+                    pro: 'Pro',
+                    ultra: 'Ultra',
+                    sora2: 'Sora 2',
+                    nanobanana: 'Nano Banana Pro'
+                }
+                
+                chatMessages.push({
+                    role: 'ai',
+                    model: modelNames[modelSelect] || 'Basic',
+                    imageUrl: imageUrl,
+                    prompt: prompt
+                })
+                
+                // Also save to history
+                history.unshift({
+                    id: Date.now(),
+                    prompt: prompt,
+                    model: modelNames[modelSelect] || 'Basic',
+                    imageUrl: imageUrl,
+                    timestamp: new Date().toISOString(),
+                    creditsUsed: cost
+                })
+                
+                saveState()
+                renderChat()
+                hideModal()
+                
+                // Slight scroll to bottom
+                const chat = document.getElementById('chat-container')
+                chat.scrollTop = chat.scrollHeight
+            }, 1850)
+        }
+        
+        function renderChat() {
+            const container = document.getElementById('chat-container')
+            
+            // Clear except welcome (welcome is hidden already)
+            container.innerHTML = ''
+            
+            chatMessages.forEach(msg => {
+                const div = document.createElement('div')
+                
+                if (msg.role === 'user') {
+                    div.className = 'flex justify-end'
+                    div.innerHTML = `
+                    <div class="max-w-[70%] bg-[#22d3ee] text-[#0a0a0f] px-6 py-4 rounded-3xl rounded-tr-none">
+                        <p class="font-medium">${msg.content}</p>
+                    </div>`
+                } else {
+                    div.className = 'flex gap-4'
+                    div.innerHTML = `
+                    <div class="chat-bubble-ai max-w-[70%] p-5 rounded-3xl rounded-tl-none">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-[#c026d3]">⚡</span>
+                            <span class="uppercase text-xs tracking-widest font-medium text-[#22d3ee]">Vision Forge • ${msg.model}</span>
+                        </div>
+                        <img src="${msg.imageUrl}" 
+                             class="w-full max-h-[420px] object-cover rounded-2xl shadow-xl border border-white/10" alt="Generated image">
+                        <div class="flex justify-between items-center mt-4">
+                            <p class="text-xs text-zinc-400">“${msg.prompt}”</p>
+                            <a href="${msg.imageUrl}" download="visionforge-${Date.now()}.jpg" 
+                               class="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-3xl">
+                                <span>⬇️</span>
+                                <span>Download</span>
+                            </a>
+                        </div>
+                    </div>`
+                }
+                container.appendChild(div)
+            })
+            
+            container.scrollTop = container.scrollHeight
+        }
+        
+        function quickPrompt(text) {
+            const input = document.getElementById('prompt-input')
+            input.value = text
+            generateImage()
+        }
+        
+        // History render
+        function renderHistory() {
+            const grid = document.getElementById('history-grid')
+            const empty = document.getElementById('empty-history')
+            
+            grid.innerHTML = ''
+            
+            if (history.length === 0) {
+                empty.classList.remove('hidden')
+                return
+            }
+            
+            empty.classList.add('hidden')
+            
+            history.forEach(item => {
+                const card = document.createElement('div')
+                card.className = 'group bg-[#16161f] border border-white/10 hover:border-[#c026d3]/30 rounded-3xl overflow-hidden'
+                card.innerHTML = `
+                <div class="relative">
+                    <img src="${item.imageUrl}" class="w-full aspect-square object-cover" alt="">
+                    <div class="absolute top-3 right-3 px-3 py-1 text-xs bg-black/60 text-white rounded-3xl backdrop-blur">
+                        ${item.model}
+                    </div>
+                </div>
+                <div class="p-4">
+                    <p class="text-sm line-clamp-2 text-zinc-300 mb-3">${item.prompt}</p>
+                    <div class="flex justify-between text-xs text-zinc-400">
+                        <span>${new Date(item.timestamp).toLocaleDateString('en-US', {month:'short', day:'numeric'})}</span>
+                        <a href="${item.imageUrl}" download="vision-${item.id}.jpg" 
+                           class="text-[#22d3ee] flex items-center hover:underline">Download →</a>
+                    </div>
+                </div>`
+                grid.appendChild(card)
+            })
+        }
+        
+        // Premium screen
+        function renderPremiumScreen() {
+            const container = document.getElementById('premium-status')
+            const upgradeBtn = document.getElementById('upgrade-btn')
+            
+            if (currentUser.isPremium) {
+                container.innerHTML = `
+                <div class="inline-flex items-center gap-2 px-5 py-2 bg-emerald-400/10 text-emerald-400 rounded-3xl">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-400"></span>
+                    </span>
+                    PREMIUM ACTIVE
+                </div>`
+                upgradeBtn.innerHTML = `✅ You already have full access`
+                upgradeBtn.disabled = true
+                upgradeBtn.classList.add('!opacity-30')
+            } else {
+                container.innerHTML = `<span class="text-amber-400 font-medium">Locked models available</span>`
+            }
+        }
+        
+        function upgradeToPremium() {
+            currentUser.isPremium = true
+            saveState()
+            updatePremiumBadge()
+            renderPremiumScreen()
+            
+            // Unlock premium models in dropdown
+            document.querySelectorAll('.premium-only').forEach(opt => {
+                opt.disabled = false
+            })
+            
+            const notif = document.createElement('div')
+            notif.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#22d3ee; color:#0a0a0f; padding:16px 24px; border-radius:9999px; box-shadow:0 0 30px #22d3ee; font-weight:600'
+            notif.textContent = '🎉 Premium unlocked! Sora 2 & Nano Banana Pro are now available.'
+            document.body.appendChild(notif)
+            
+            setTimeout(() => {
+                notif.style.transitionDuration = '400ms'
+                notif.style.opacity = '0'
+                setTimeout(() => notif.remove(), 400)
+            }, 2800)
+        }
+        
+        function updatePremiumBadge() {
+            const badge = document.getElementById('premium-badge')
+            if (currentUser.isPremium) {
+                badge.classList.remove('hidden')
+            }
+        }
+        
+        // Image to Video placeholder
+        function triggerImageToVideo() {
+            if (credits < 25) {
+                alert('Not enough credits for video conversion (25 needed)')
+                return
+            }
+            
+            // Only works if we have generated at least one image
+            if (!lastGeneratedImageUrl) {
+                alert('Generate an image first, then convert it to video!')
+                navigateTo('generate')
+                return
+            }
+            
+            credits -= 25
+            updateCreditsUI()
+            saveState()
+            
+            document.getElementById('video-modal').classList.remove('hidden')
+            document.getElementById('video-modal-text').textContent = 'Motion synthesis in progress using Sora 2 engine...'
+            
+            // Fake progress
+            setTimeout(() => {
+                document.getElementById('video-status').innerHTML = `
+                <span class="text-emerald-400">✓</span> Video ready — 4 seconds
+                `
+                document.getElementById('video-ready').classList.remove('hidden')
+            }, 2200)
+        }
+        
+        function fakeDownloadVideo() {
+            const link = document.createElement('a')
+            link.href = 'https://picsum.photos/id/1015/1280/720' // fake thumbnail
+            link.download = 'visionforge-video-demo.mp4'
+            link.click()
+            hideModal()
+            
+            const thanks = document.createElement('div')
+            thanks.textContent = '🎬 Video downloaded (demo file)'
+            thanks.style.cssText = 'position:fixed; bottom:30px; left:30px; background:#c026d3; padding:14px 24px; border-radius:9999px; color:white; font-weight:600'
+            document.body.append(thanks)
+            setTimeout(() => thanks.remove(), 2200)
+        }
+        
+        function showGeneratingModal(model, cost) {
+            const modal = document.getElementById('generating-modal')
+            modal.classList.remove('hidden')
+            document.getElementById('modal-status').innerHTML = `
+                Generating with <span class="font-semibold">${model}</span> model • ${cost} credits deducted
+            `
+        }
+        
+        function hideModal() {
+            document.getElementById('generating-modal').classList.add('hidden')
+            document.getElementById('credits-modal').classList.add('hidden')
+            document.getElementById('video-modal').classList.add('hidden')
+        }
+        
+        function showCreditsModal() {
+            document.getElementById('credits-modal').classList.remove('hidden')
+        }
+        
+        // Keyboard support for prompt
+        function addKeyboardSupport() {
+            const input = document.getElementById('prompt-input')
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    generateImage()
+                }
+            })
+        }
+        
+        // Main app bootstrap
+        function startApp() {
+            // Tailwind ready
+            initializeTailwind()
+            
+            // Login form
+            const loginForm = document.getElementById('login-form')
+            loginForm.addEventListener('submit', handleLogin)
+            
+            // Restore any previous session automatically if data exists
+            if (localStorage.getItem('visionForgeState')) {
+                // Auto-login for demo continuity
+                currentUser.email = 'demo@visionforge.ai'
+                document.getElementById('user-email').textContent = currentUser.email
+                loadState()
+                updateCreditsUI()
+                updatePremiumBadge()
+                
+                document.getElementById('login-screen').classList.add('hidden')
+                document.getElementById('app-screen').classList.remove('hidden')
+                navigateTo('generate')
+            }
+            
+            // Enable keyboard
+            addKeyboardSupport()
+            
+            console.log('%c✅ Vision Forge AI demo ready! Dark, futuristic, and fully functional.', 'color:#c026d3; font-size:13px; font-family:Space Grotesk')
+        }
+        
+        // Launch
+        window.onload = startApp
+    </script>
 </body>
 </html>
